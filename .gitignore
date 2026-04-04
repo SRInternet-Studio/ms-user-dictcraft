@@ -4,3 +4,6 @@ __pycache__/
 *.pyo
 
 ./*.dat
+./*.log
+./*.txt
+venv/

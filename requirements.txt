@@ -1,2 +1,5 @@
 pandas
-pyyaml
+pypinyin
+sv-ttk
+darkdetect
+pywinstyles

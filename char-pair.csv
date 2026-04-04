@@ -1,9 +1,0 @@
-符号,中文名,英文名,简称,描述
-《》,书名号,Book Title Marks,BKM/shu/smh,用于标注书名、篇名等。
-“”,引号,Quotation Marks,QUO/yin,用于标记直接引用的话或特定的标题。
-‘’,单引号,Single Quotation Marks,SQUO/dyh,用于标记直接引用的话或特定的标题。
-「」,直角引号,Corner Brackets,CRB,用于标记直接引用的话或特定的标题。
-『』,直角中空引号,Hollow Corner Brackets,HCRB,用于标记直接引用的话或特定的标题。
-⌈⌉,向上取整括号,Ceiling Brackets,CEI/ceil,用于表示向上取整，常见于数学。
-⌊⌋,向下取整括号,Floor Brackets,FLR/floor,用于表示向下取整，常见于数学。
-⟨⟩,角括号,Angle Brackets,ANG/angle,用于数学和编程中的各种用途。
