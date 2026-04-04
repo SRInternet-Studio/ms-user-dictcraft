@@ -1,4 +1,15 @@
-# MS User DictCraft
+<div align="center">
+  
+
+# <img width="45" height="45" alt="app_icon" src="https://github.com/user-attachments/assets/342d9eab-53ab-4e14-963e-df611bd4e483" /> MS User DictCraft
+智造词库，高效输入。
+
+<img width="781.5" height="622.5" alt="RootWindow" src="https://github.com/user-attachments/assets/aa7d6a89-d30b-4876-b3da-13ce84edc838" />
+
+</div>
+
+
+## ⚡ 介绍
 
 **MS User DictCraft** 是一款为 Windows 微软拼音输入法打造的高效词库管理与生成工具，旨在通过简化的 GUI 界面和批量化处理能力，帮助用户快速构建、管理和转换自定义词库（.dat格式），打破输入法的词汇瓶颈。
 
@@ -40,7 +51,17 @@ python main.py
 4. **导入微软输入法**：
    * 打开 `设置 > 时间和语言 > 语言和区域 > 中文（简体） > 选项`。
    * 找到“微软拼音”设置，进入“词库和自学习”。
-   * 点击“导入词典”，选择生成的 `.dat` 文件即可生效。
+   * 点击“导入”，选择生成的 `.dat` 文件即可生效。
+  
+<details>
+  <summary>设置页面截图</summary>
+  <p align="center">
+    <b>Windows 设置 (Windows 11 专业版)</b>
+    <br>
+    <img width="1226" height="306" alt="Windows 设置" src="https://github.com/user-attachments/assets/14a76d24-9fe6-4fa8-9c80-febdb09e68a1" />
+    <br>
+  </p>
+</details>
 
 ## 🛠 技术栈
 *   **GUI 框架**：Tkinter (优化版)
