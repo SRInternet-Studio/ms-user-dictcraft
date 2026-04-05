@@ -1,7 +1,4 @@
-import tkinter as tk
-from tkinter import ttk, filedialog, messagebox
-import os, sys
-import sv_ttk
+import os, sys, ctypes, json
 import darkdetect
 import pandas as pd
 from datetime import datetime
@@ -13,18 +10,70 @@ logging.basicConfig(
     level=logging.INFO if getattr(sys, 'frozen', False) else logging.DEBUG,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('app.log'),
+        logging.FileHandler('app.log', encoding='utf-8'),
         logging.StreamHandler()
     ]
 )
 logger = logging.getLogger(__name__)
 
+default_config = {
+    "enable_high_dpi_awareness": False,
+    "new_file_name": "new.dat",
+    "window_size": "800x600",
+    "dark_mode": "auto"
+}
+
+def load_config():
+    global default_config
+    config_path = 'config.json'
+    
+    if os.path.exists(config_path):
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+            for key, value in default_config.items():
+                if key not in config:
+                    config[key] = value
+            default_config = config
+        except Exception as e:
+            logger.error(f"读取配置文件失败: {e}")
+    else:
+        with open(config_path, 'w', encoding='utf-8') as f:
+            json.dump(default_config, f, ensure_ascii=False, indent=4)
+        logger.info("已创建默认配置文件: config.json")
+
+def enable_high_dpi_awareness():
+    if sys.platform == 'win32':
+        try:
+            ctypes.windll.shcore.SetProcessDpiAwareness(2)
+        except Exception:
+            try:
+                # 回退方案：兼容 Windows 7/8 的旧版 DPI Aware API
+                ctypes.windll.user32.SetProcessDPIAware()
+            except Exception:
+                pass
+
+load_config()
+if default_config.get("enable_high_dpi_awareness", False): enable_high_dpi_awareness()
+
+import tkinter as tk
+from tkinter import ttk, filedialog, messagebox
+import sv_ttk
+
 class UserDictGUI:
     def __init__(self, root: tk.Tk):
+        global default_config
+        
         self.root = root
         self.root.title("MS User DictCraft")
-        self.root.geometry("800x600")
         self.root.resizable(True, True)
+        
+        if sys.platform == 'win32' and default_config.get("enable_high_dpi_awareness", False):
+            try: ctypes.windll.dwmapi.DwmSetWindowAttribute(
+                    ctypes.windll.user32.GetParent(self.root.winfo_id()), 
+                    2, ctypes.byref(ctypes.c_int(1)), 4
+                )
+            except: pass
         
         self.bg_color = "#f5f5f5"
         self.btn_color = "#4a90e2"
@@ -89,6 +138,7 @@ class UserDictGUI:
         self.init_about_tab()
     
     def create_scrollable_frame(self, parent):
+        touch_state = {"y": 0, "is_dragging": False}
         canvas = tk.Canvas(parent, bg=self.bg_color, highlightthickness=0)
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         
@@ -104,16 +154,81 @@ class UserDictGUI:
             req_height = scrollable_frame.winfo_reqheight()
             if event.height > req_height:
                 canvas.itemconfig(canvas_frame_id, width=event.width, height=event.height)
+            else:
+                canvas.itemconfig(canvas_frame_id, width=event.width)
+            
+        def _on_mousewheel(event: tk.Event):
+            if str(canvas) not in str(event.widget): return
+            if isinstance(event.widget, (tk.Text, ttk.Treeview, ttk.Scrollbar, tk.Scrollbar)): return
+            logger.info(f"滚动事件: {event.delta}")
+
+            if sys.platform == "darwin":  # macOS
+                canvas.yview_scroll(int(-1 * event.delta), "units")
+            else:  # Windows
+                logger.info(f"Windows 滚轮事件: {event.delta}")
+                # canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+                if event.delta > 0:
+                    canvas.yview_scroll(-1, "units") # 向上滚
+                elif event.delta < 0:
+                    canvas.yview_scroll(1, "units")  # 向下滚
+                    
+        def _on_touch_press(event: tk.Event):
+            if str(canvas) not in str(event.widget): return
+            try:
+                if isinstance(event.widget, (tk.Text, ttk.Treeview, ttk.Scrollbar, tk.Scrollbar, ttk.Entry, tk.Entry, ttk.Combobox, ttk.Button, tk.Button)):
+                    touch_state["is_dragging"] = False
+                    return
+            except Exception:
+                pass
+
+            touch_state["is_dragging"] = True
+            touch_state["y"] = event.y_root
                 
-            canvas.itemconfig(canvas_frame_id, width=event.width)
+        def _on_linux_scroll_up(event: tk.Event):
+            if str(canvas) not in str(event.widget): return 
+            if not isinstance(event.widget, (tk.Text, ttk.Treeview, ttk.Scrollbar, tk.Scrollbar)):
+                logger.info(f"Linux 滚轮事件: {event.delta}")
+                canvas.yview_scroll(-1, "units")
+                
+        def _on_linux_scroll_down(event: tk.Event): 
+            if str(canvas) not in str(event.widget): return 
+            if not isinstance(event.widget, (tk.Text, ttk.Treeview, ttk.Scrollbar, tk.Scrollbar)):
+                logger.info(f"Linux 滚轮事件: {event.delta}")
+                canvas.yview_scroll(1, "units")
+                
+        def _on_touch_drag(event: tk.Event):
+            if not touch_state["is_dragging"] or str(canvas) not in str(event.widget): return
+
+            delta_y = touch_state["y"] - event.y_root
+            if delta_y == 0:
+                return
+
+            bbox = canvas.bbox("all")
+            if not bbox:
+                return
+                
+            total_height = bbox[3] - bbox[1]
+            if total_height <= 0:
+                return
+
+            fraction_delta = delta_y / total_height
+            current_fraction = canvas.yview()[0]
+            canvas.yview_moveto(current_fraction + fraction_delta)
+            touch_state["y"] = event.y_root
         
         canvas_frame_id = canvas.create_window((0, 0), window=scrollable_frame, anchor=tk.NW)
         canvas.bind("<Configure>", on_configure)
-        canvas.configure(background=self.bg_color, highlightthickness=0)
+        self.root.bind_all("<MouseWheel>", _on_mousewheel, add="+")
+        self.root.bind_all("<Button-4>", _on_linux_scroll_up, add="+")
+        self.root.bind_all("<Button-5>", _on_linux_scroll_down, add="+")
+        self.root.bind_all("<ButtonPress-1>", _on_touch_press, add="+")
+        self.root.bind_all("<B1-Motion>", _on_touch_drag, add="+")
         
+        canvas.configure(background=self.bg_color, highlightthickness=0)
         return scrollable_frame
         
     def init_generate_tab(self):
+        global default_config
         scrollable_frame = self.create_scrollable_frame(self.generate_tab)
         
         self.title_label = ttk.Label(scrollable_frame, text="MS User DictCraft", font=self.title_font)
@@ -139,7 +254,7 @@ class UserDictGUI:
         self.output_label = ttk.Label(self.output_frame, text="输出DAT文件:", font=self.label_font)
         self.output_label.grid(row=0, column=0, sticky=tk.W, pady=5)
         
-        self.output_var = tk.StringVar(value="new.dat")
+        self.output_var = tk.StringVar(value=default_config.get("new_file_name", "new.dat"))
         self.output_entry = ttk.Entry(self.output_frame, textvariable=self.output_var, width=40)
         self.output_entry.grid(row=0, column=1, sticky=tk.EW, pady=5, padx=5)
         
@@ -221,6 +336,10 @@ class UserDictGUI:
                 
         except FileNotFoundError:
             logger.info("dict.csv 文件不存在，将创建新文件")
+            df = pd.DataFrame(columns=['符号', '中文名', '英文名', '拼音', '位置', '描述'])
+            df.to_csv('dict.csv', index=False, encoding='utf-8-sig')
+        except pd.errors.EmptyDataError:
+            logger.info("dict.csv 文件为空，将创建新文件")
             df = pd.DataFrame(columns=['符号', '中文名', '英文名', '拼音', '位置', '描述'])
             df.to_csv('dict.csv', index=False, encoding='utf-8-sig')
         except Exception as e:
@@ -628,7 +747,7 @@ class UserDictGUI:
                 try:
                     existing_df = pd.read_csv('dict.csv')
                     df = pd.concat([existing_df, df], ignore_index=True)
-                except FileNotFoundError:
+                except (FileNotFoundError, pd.errors.EmptyDataError):
                     pass
                 
                 df.to_csv('dict.csv', index=False, encoding='utf-8-sig')
@@ -745,7 +864,7 @@ class UserDictGUI:
         ttk.Label(content_frame, text="", font=self.label_font).pack(pady=5) # 空一行
         
         # 产品版本
-        version = ttk.Label(content_frame, text="版本: 26.1", font=self.label_font)
+        version = ttk.Label(content_frame, text="版本: v26.1.1", font=self.label_font)
         version.pack(pady=5)
         
         # 适用于 Windows10/11
@@ -798,8 +917,7 @@ class UserDictGUI:
         webbrowser.open(url)
             
 def apply_theme_to_titlebar(root):
-    if sys.platform != "win32":
-        return
+    if sys.platform != "win32": return
     
     import pywinstyles
     version = sys.getwindowsversion()
@@ -815,14 +933,26 @@ def apply_theme_to_titlebar(root):
 
 if __name__ == "__main__":
     root = tk.Tk()
-    # 设置程序图标
+    
+    # 应用窗口大小设置
+    root.geometry(default_config.get("window_size", "800x600"))
+    
     icon_path = os.path.join(os.path.dirname(__file__), 'sources', 'app.png')
     if os.path.exists(icon_path):
         try:
             root.iconphoto(True, tk.PhotoImage(file=icon_path))
         except Exception as e:
             logger.error(f"设置图标失败: {e}")
+    
+    # 应用主题设置
+    match default_config.get("dark_mode", "auto"):
+        case "dark":
+            sv_ttk.set_theme("dark")
+        case "light":
+            sv_ttk.set_theme("light")
+        case _:
+            sv_ttk.set_theme(darkdetect.theme())
+    
     app = UserDictGUI(root)
-    sv_ttk.set_theme(darkdetect.theme())
     apply_theme_to_titlebar(root)
     root.mainloop()

@@ -4,7 +4,7 @@
 # <img width="45" height="45" alt="app_icon" src="https://github.com/user-attachments/assets/342d9eab-53ab-4e14-963e-df611bd4e483" /> MS User DictCraft
 智造词库，高效输入。
 
-<img width="781.5" height="622.5" alt="RootWindow" src="https://github.com/user-attachments/assets/aa7d6a89-d30b-4876-b3da-13ce84edc838" />
+<img width="782" height="623" alt="RootWindow" src="https://github.com/user-attachments/assets/aa7d6a89-d30b-4876-b3da-13ce84edc838" />
 
 </div>
 
@@ -48,10 +48,31 @@ python main.py
 1. **批量构建**：在“批量生成”标签页中导入文本文件，设置好拼音规则与词条参数，一键生成。
 2. **精细编辑**：在“词条编辑”标签页中，像操作 Excel 一样管理你的词条数据。
 3. **导出词库**：在“生成词典”标签页，选择保存路径，即可获得可直接导入输入法的 `.dat` 文件。
-4. **导入微软输入法**：
+4. **导入微软拼音**：
    * 打开 `设置 > 时间和语言 > 语言和区域 > 中文（简体） > 选项`。
    * 找到“微软拼音”设置，进入“词库和自学习”。
    * 点击“导入”，选择生成的 `.dat` 文件即可生效。
+
+### 配置文件说明
+
+项目支持通过 `config.json` 文件自定义应用设置：
+
+```json
+{
+  "enable_high_dpi_awareness": false,
+  "new_file_name": "new.txt",
+  "window_size": "800x600",
+  "dark_mode": "auto"
+}
+```
+
+*   **enable_high_dpi_awareness**：是否启用高 DPI 感知，适用于高分辨率显示器。
+*   **new_file_name**：新建文件的默认名称。
+*   **window_size**：应用窗口的默认大小，格式为 "宽x高"。
+*   **dark_mode**：主题模式，可选值：
+    *   `auto`：自动根据系统主题切换
+    *   `dark`：强制使用深色主题
+    *   `light`：强制使用浅色主题
   
 <details>
   <summary>设置页面截图</summary>

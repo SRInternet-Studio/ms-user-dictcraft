@@ -3,3 +3,4 @@ pypinyin
 sv-ttk
 darkdetect
 pywinstyles
+pyyaml  

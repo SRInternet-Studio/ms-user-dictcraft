@@ -1,9 +1,11 @@
 .vscode/
 __pycache__/
+output/
 *.pyc
 *.pyo
 
-./*.dat
-./*.log
-./*.txt
+*.dat
+*.log
+Click-to-convet-exe.bat
+Click-to-convet-exe.json
 venv/
